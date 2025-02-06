@@ -36,7 +36,7 @@
 #define BUTTON_WINDOW_HEIGHT													25
 #define BUTTON_WINDOW_ID														WM_USER
 
-#define EDIT_WINDOW_DEFAULT_URL													"http://www.google.com"
+#define EDIT_WINDOW_DEFAULT_URL													"https://news.sky.com/uk"
 
 #define ABOUT_MESSAGE_TEXT														"Download\r\n"						\
 																				"\r\n"								\

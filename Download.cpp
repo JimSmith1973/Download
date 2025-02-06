@@ -9,6 +9,32 @@ ButtonWindow g_buttonWindow;
 ListBoxWindow g_listBoxWindow;
 StatusBarWindow g_statusBarWindow;
 
+BOOL ProcessStrings( LPCTSTR lpszString )
+{
+	BOOL bResult = FALSE;
+
+	// Ensure that string is not empty
+	if( lpszString[ 0 ] )
+	{
+		// String is not empty
+
+		// Add string to list box window
+		if( g_listBoxWindow.AddTextEx( lpszString ) )
+		{
+			// Successfully added string to status bar window
+
+			// Update return value
+			bResult = TRUE;
+
+		} // End of successfully added string to status bar window
+
+	} // End of string is not empty
+
+	return bResult;
+
+} // End of function ProcessStrings
+
+
 BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 {
 	BOOL bResult = FALSE;
@@ -19,8 +45,8 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 	// Format status message
 	wsprintf( lpszStatusMessage, INTERNET_CLASS_DOWNLOADING_STATUS_MESSAGE_FORMAT_STRING, lpszUrl );
 
-	// Show status message on list box window
-	g_listBoxWindow.AddTextEx( lpszStatusMessage );
+	// Show status message on status bar window
+	g_statusBarWindow.SetText( lpszStatusMessage );
 
 	// Download url to local file
 	if( g_internet.DownloadFile( lpszUrl, lpszLocalFilePath ) )
@@ -43,8 +69,8 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 
 	} // End of unable to download url to local file
 
-	// Show status message on list box window
-	g_listBoxWindow.AddTextEx( lpszStatusMessage );
+	// Show status message on status bar window
+	g_statusBarWindow.SetText( lpszStatusMessage );
 
 	// Free string memory
 	delete [] lpszStatusMessage;
@@ -136,6 +162,8 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 			// A create message
 			HINSTANCE hInstance;
 			LPTSTR lpszUrl = NULL;
+
+			/*
 			DWORD dwClipboardTextLength;
 			Clipboard clipboard;
 
@@ -161,6 +189,7 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 				} // End of unable to get url from clipboard
 
 			} // End of clipboard contains text
+			*/
 
 			// Ensure that url is valid
 			if( !( lpszUrl ) )
@@ -336,9 +365,22 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 								if( localFile.Read() )
 								{
 									// Successfully read local file
+									int nStringCount;
 
-									// Display local file text
-									localFile.DisplayText( hWndMain );
+									// Allocate string memory
+									LPTSTR lpszStatusMessage = new char[ STRING_LENGTH + sizeof( char ) ];
+
+									// Process strings
+									nStringCount = localFile.ProcessStrings( lpszUrl, ".jpg", &ProcessStrings );
+
+									// Format status message
+									wsprintf( lpszStatusMessage, HTML_FILE_CLASS_PROCESS_STRINGS_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, nStringCount );
+
+									// Show status message on status bar window
+									g_statusBarWindow.SetText( lpszStatusMessage );
+
+									// Free string memory
+									delete [] lpszStatusMessage;
 
 								} // End of successfully read local file
 								else
