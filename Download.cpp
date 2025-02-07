@@ -9,7 +9,7 @@ ButtonWindow g_buttonWindow;
 ListBoxWindow g_listBoxWindow;
 StatusBarWindow g_statusBarWindow;
 
-BOOL ProcessStrings( LPCTSTR lpszString )
+BOOL ProcessString( LPCTSTR lpszString, LPCTSTR lpszExtra )
 {
 	BOOL bResult = FALSE;
 
@@ -17,22 +17,32 @@ BOOL ProcessStrings( LPCTSTR lpszString )
 	if( lpszString[ 0 ] )
 	{
 		// String is not empty
+		HtmlFile htmlFile;
 
-		// Add string to list box window
-		if( g_listBoxWindow.AddTextEx( lpszString ) )
+		// Allocate string memory
+		LPTSTR lpszAbsoluteUrl = new char[ STRING_LENGTH + sizeof( char ) ];
+
+		// Get absolute url
+		htmlFile.GetAbsoluteUrl( lpszString, lpszExtra, lpszAbsoluteUrl );
+
+		// Add absolute url to list box window
+		if( g_listBoxWindow.AddTextEx( lpszAbsoluteUrl ) )
 		{
-			// Successfully added string to status bar window
+			// Successfully added absolute url to status bar window
 
 			// Update return value
 			bResult = TRUE;
 
-		} // End of successfully added string to status bar window
+		} // End of successfully added absolute url to status bar window
+
+		// Free string memory
+		delete [] lpszAbsoluteUrl;
 
 	} // End of string is not empty
 
 	return bResult;
 
-} // End of function ProcessStrings
+} // End of function ProcessString
 
 
 BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
@@ -370,8 +380,11 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 									// Allocate string memory
 									LPTSTR lpszStatusMessage = new char[ STRING_LENGTH + sizeof( char ) ];
 
+									// Delete all items from list box window
+									g_listBoxWindow.ResetContent();
+
 									// Process strings
-									nStringCount = localFile.ProcessStrings( lpszUrl, ".jpg", &ProcessStrings );
+									nStringCount = localFile.ProcessStrings( ".jpg", lpszUrl, &ProcessString );
 
 									// Format status message
 									wsprintf( lpszStatusMessage, HTML_FILE_CLASS_PROCESS_STRINGS_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, nStringCount );
