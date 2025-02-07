@@ -38,6 +38,8 @@
 
 #define EDIT_WINDOW_DEFAULT_URL													"https://news.sky.com/uk"
 
+#define DEFAULT_STRING_MUST_CONTAIN_VALUE										".jpg"
+
 #define ABOUT_MESSAGE_TEXT														"Download\r\n"						\
 																				"\r\n"								\
 																				"Written by Jim Smith\r\n"			\

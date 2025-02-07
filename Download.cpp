@@ -8,42 +8,7 @@ EditWindow g_editWindow;
 ButtonWindow g_buttonWindow;
 ListBoxWindow g_listBoxWindow;
 StatusBarWindow g_statusBarWindow;
-
-BOOL ProcessString( LPCTSTR lpszString, LPCTSTR lpszExtra )
-{
-	BOOL bResult = FALSE;
-
-	// Ensure that string is not empty
-	if( lpszString[ 0 ] )
-	{
-		// String is not empty
-		HtmlFile htmlFile;
-
-		// Allocate string memory
-		LPTSTR lpszAbsoluteUrl = new char[ STRING_LENGTH + sizeof( char ) ];
-
-		// Get absolute url
-		htmlFile.GetAbsoluteUrl( lpszString, lpszExtra, lpszAbsoluteUrl );
-
-		// Add absolute url to list box window
-		if( g_listBoxWindow.AddTextEx( lpszAbsoluteUrl ) )
-		{
-			// Successfully added absolute url to status bar window
-
-			// Update return value
-			bResult = TRUE;
-
-		} // End of successfully added absolute url to status bar window
-
-		// Free string memory
-		delete [] lpszAbsoluteUrl;
-
-	} // End of string is not empty
-
-	return bResult;
-
-} // End of function ProcessString
-
+LPTSTR g_lpszStringMustContain;
 
 BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 {
@@ -55,8 +20,8 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 	// Format status message
 	wsprintf( lpszStatusMessage, INTERNET_CLASS_DOWNLOADING_STATUS_MESSAGE_FORMAT_STRING, lpszUrl );
 
-	// Show status message on status bar window
-	g_statusBarWindow.SetText( lpszStatusMessage );
+	// Add status message to list box window
+	g_listBoxWindow.AddTextEx( lpszStatusMessage );
 
 	// Download url to local file
 	if( g_internet.DownloadFile( lpszUrl, lpszLocalFilePath ) )
@@ -79,8 +44,8 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 
 	} // End of unable to download url to local file
 
-	// Show status message on status bar window
-	g_statusBarWindow.SetText( lpszStatusMessage );
+	// Add status message to list box window
+	g_listBoxWindow.AddTextEx( lpszStatusMessage );
 
 	// Free string memory
 	delete [] lpszStatusMessage;
@@ -112,6 +77,46 @@ BOOL DownloadActionFunction( LPCTSTR lpszItemText )
 	return DownloadFile( lpszItemText );
 
 } // End of function DownloadActionFunction
+
+BOOL ProcessString( LPCTSTR lpszString, LPCTSTR lpszExtra )
+{
+	BOOL bResult = FALSE;
+
+	// Ensure that string is not empty
+	if( lpszString[ 0 ] )
+	{
+		// String is not empty
+		HtmlFile htmlFile;
+
+		// Allocate string memory
+		LPTSTR lpszAbsoluteUrl = new char[ STRING_LENGTH + sizeof( char ) ];
+
+		// Get absolute url
+		htmlFile.GetAbsoluteUrl( lpszString, lpszExtra, lpszAbsoluteUrl );
+
+		// Download file
+		if( DownloadFile( lpszAbsoluteUrl ) )
+		{
+			// Successfully downloaded file
+
+			// Update return value
+			bResult = TRUE;
+
+		} // End of successfully downloaded file
+		else
+		{
+			// Unable to download file
+
+		} // End of unable to download file
+
+		// Free string memory
+		delete [] lpszAbsoluteUrl;
+
+	} // End of string is not empty
+
+	return bResult;
+
+} // End of function ProcessString
 
 void EditWindowUpdateFunction( int nTextLength )
 {
@@ -172,8 +177,6 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 			// A create message
 			HINSTANCE hInstance;
 			LPTSTR lpszUrl = NULL;
-
-			/*
 			DWORD dwClipboardTextLength;
 			Clipboard clipboard;
 
@@ -199,7 +202,6 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 				} // End of unable to get url from clipboard
 
 			} // End of clipboard contains text
-			*/
 
 			// Ensure that url is valid
 			if( !( lpszUrl ) )
@@ -380,11 +382,8 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 									// Allocate string memory
 									LPTSTR lpszStatusMessage = new char[ STRING_LENGTH + sizeof( char ) ];
 
-									// Delete all items from list box window
-									g_listBoxWindow.ResetContent();
-
 									// Process strings
-									nStringCount = localFile.ProcessStrings( ".jpg", lpszUrl, &ProcessString );
+									nStringCount = localFile.ProcessStrings( g_lpszStringMustContain, lpszUrl, &ProcessString );
 
 									// Format status message
 									wsprintf( lpszStatusMessage, HTML_FILE_CLASS_PROCESS_STRINGS_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, nStringCount );
@@ -640,6 +639,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow )
 				Menu systemMenu;
 				ArgumentList argumentList;
 
+				// Allocate string memory
+				g_lpszStringMustContain = new char[ STRING_LENGTH + sizeof( char ) ];
+
 				// Get system menu
 				systemMenu.GetSystem( mainWindow );
 
@@ -654,10 +656,37 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow )
 				{
 					// Successfully got argument list
 
-					// Process arguments
-					//argumentList.ProcessArguments( &OpenFileFunction );
+					// See if there are input parameters
+					if( argumentList.GetArgumentCount() > ARGUMENT_LIST_CLASS_FIRST_INPUT_PARAMETER )
+					{
+						// There are input parameters
+
+						// Use first input parameters as string must contain value
+						if( !( argumentList.GetArgument( ARGUMENT_LIST_CLASS_FIRST_INPUT_PARAMETER, g_lpszStringMustContain ) ) )
+						{
+							// Unable to use first input parameters as string must contain value
+
+							// Use default string must contain value
+							lstrcpy( g_lpszStringMustContain, DEFAULT_STRING_MUST_CONTAIN_VALUE );
+
+						} // End of unable to use first input parameters as string must contain value
+
+					} // End of there are input parameters
+					else
+					{
+						// There are no input parameters
+
+						// Use default string must contain value
+						lstrcpy( g_lpszStringMustContain, DEFAULT_STRING_MUST_CONTAIN_VALUE );
+
+					} // End of there are no input parameters
 
 				} // End of successfully got argument list
+				else
+				{
+					// Unable to get argument list
+
+				} // End of unable to get argument list
 
 				// Show main window
 				mainWindow.Show( nCmdShow );
@@ -675,6 +704,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow )
 					message.Dispatch();
 
 				}; // End of message loop
+
+				// Free string memory
+				delete [] g_lpszStringMustContain;
 
 			} // End of successfully created main window
 			else
@@ -705,8 +737,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow )
 		MessageBox( NULL, INTERNET_CLASS_UNABLE_TO_CONNECT_TO_INTERNET_ERROR_MESSAGE, ERROR_MESSAGE_CAPTION, ( MB_OK | MB_ICONERROR ) );
 
 	} // End of unable to connect to internet
-
-
 
 	return message;
 
