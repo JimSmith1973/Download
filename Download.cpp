@@ -6,7 +6,8 @@
 Internet g_internet;
 EditWindow g_editWindow;
 ButtonWindow g_buttonWindow;
-ListBoxWindow g_listBoxWindow;
+ListBoxWindow g_fileListBoxWindow;
+ListBoxWindow g_statusListBoxWindow;
 StatusBarWindow g_statusBarWindow;
 LPTSTR g_lpszStringMustContain;
 
@@ -20,13 +21,16 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 	// Format status message
 	wsprintf( lpszStatusMessage, INTERNET_CLASS_DOWNLOADING_STATUS_MESSAGE_FORMAT_STRING, lpszUrl );
 
-	// Add status message to list box window
-	g_listBoxWindow.AddTextEx( lpszStatusMessage );
+	// Add status message to status list box window
+	g_statusListBoxWindow.AddTextEx( lpszStatusMessage );
 
 	// Download url to local file
 	if( g_internet.DownloadFile( lpszUrl, lpszLocalFilePath ) )
 	{
 		// Successfully downloaded url to local file
+
+		// Add local file path to file list box window
+		g_fileListBoxWindow.AddTextEx( lpszLocalFilePath );
 
 		// Format status message
 		wsprintf( lpszStatusMessage, INTERNET_CLASS_SUCCESSFULLY_DOWNLOADED_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, lpszLocalFilePath );
@@ -44,8 +48,8 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 
 	} // End of unable to download url to local file
 
-	// Add status message to list box window
-	g_listBoxWindow.AddTextEx( lpszStatusMessage );
+	// Add status message to status list box window
+	g_statusListBoxWindow.AddTextEx( lpszStatusMessage );
 
 	// Free string memory
 	delete [] lpszStatusMessage;
@@ -239,28 +243,38 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 					// Set button window font
 					g_buttonWindow.SetFont( font );
 
-					// Create list box window
-					if( g_listBoxWindow.Create( hWndMain, hInstance ) )
+					// Create file list box window
+					if( g_fileListBoxWindow.Create( hWndMain, hInstance ) )
 					{
-						// Successfully created list box window
+						// Successfully created file list box window
 
-						// Set list box window font
-						g_listBoxWindow.SetFont( font );
+						// Set file list box window font
+						g_fileListBoxWindow.SetFont( font );
 
-						// Create status bar window
-						if( g_statusBarWindow.Create( hWndMain, hInstance ) )
+						// Create status list box window
+						if( g_statusListBoxWindow.Create( hWndMain, hInstance ) )
 						{
-							// Successfully created status bar window
+							// Successfully created status list box window
 
-							// Set status bar window font
-							g_statusBarWindow.SetFont( font );
+							// Set status list box window font
+							g_statusListBoxWindow.SetFont( font );
 
-							// Select edit window text
-							g_editWindow.SelectText();
+							// Create status bar window
+							if( g_statusBarWindow.Create( hWndMain, hInstance ) )
+							{
+								// Successfully created status bar window
 
-						} // End of successfully created status bar window
+								// Set status bar window font
+								g_statusBarWindow.SetFont( font );
 
-					} // End of successfully created list box window
+								// Select edit window text
+								g_editWindow.SelectText();
+
+							} // End of successfully created status bar window
+
+						} // End of successfully created status list box window
+
+					} // End of successfully created file list box window
 
 				} // End of successfully created button window
 
@@ -281,9 +295,10 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 			RECT rcStatus;
 			int nEditWindowWidth;
 			int nButtonWindowLeft;
-			int nStatusWindowHeight;
-			int nListBoxWindowHeight;
-			int nListBoxWindowTop;
+			int nStatusBarWindowHeight;
+			int nFileListBoxWindowTop;
+			int nFileListBoxWindowHeight;
+			int nStatusListBoxWindowTop;
 
 			// Store client width and height
 			nClientWidth	= ( int )LOWORD( lParam );
@@ -296,18 +311,20 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 			g_statusBarWindow.GetWindowRect( &rcStatus );
 
 			// Calculate window sizes
-			nStatusWindowHeight		= ( rcStatus.bottom - rcStatus.top );
-			nListBoxWindowHeight	= ( nClientHeight - ( BUTTON_WINDOW_HEIGHT + nStatusWindowHeight ) + WINDOW_BORDER_HEIGHT );
-			nEditWindowWidth		= ( ( nClientWidth - BUTTON_WINDOW_WIDTH ) + WINDOW_BORDER_WIDTH );
+			nStatusBarWindowHeight		= ( rcStatus.bottom - rcStatus.top );
+			nEditWindowWidth			= ( ( nClientWidth - BUTTON_WINDOW_WIDTH ) + WINDOW_BORDER_WIDTH );
+			nFileListBoxWindowHeight	= ( nClientHeight - ( BUTTON_WINDOW_HEIGHT + STATUS_LIST_BOX_WINDOW_HEIGHT + nStatusBarWindowHeight ) + WINDOW_BORDER_HEIGHT );
 
 			// Calculate window positions
-			nListBoxWindowTop		= ( BUTTON_WINDOW_HEIGHT - WINDOW_BORDER_HEIGHT );
+			nStatusListBoxWindowTop	= ( nClientHeight - ( nStatusBarWindowHeight + STATUS_LIST_BOX_WINDOW_HEIGHT ) - WINDOW_BORDER_HEIGHT );
 			nButtonWindowLeft		= ( nEditWindowWidth - WINDOW_BORDER_WIDTH );
+			nFileListBoxWindowTop	= ( BUTTON_WINDOW_HEIGHT - WINDOW_BORDER_HEIGHT );
 
 			// Move control windows
 			g_editWindow.Move( 0, 0, nEditWindowWidth, BUTTON_WINDOW_HEIGHT, TRUE );
 			g_buttonWindow.Move( nButtonWindowLeft, 0, BUTTON_WINDOW_WIDTH, BUTTON_WINDOW_HEIGHT, TRUE );
-			g_listBoxWindow.Move( 0, nListBoxWindowTop, nClientWidth, nListBoxWindowHeight, TRUE );
+			g_fileListBoxWindow.Move( 0, nFileListBoxWindowTop, nClientWidth, nFileListBoxWindowHeight, TRUE );
+			g_statusListBoxWindow.Move( 0, nStatusListBoxWindowTop, nClientWidth, STATUS_LIST_BOX_WINDOW_HEIGHT, TRUE );
 
 			// Break out of switch
 			break;

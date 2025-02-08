@@ -36,6 +36,8 @@
 #define BUTTON_WINDOW_HEIGHT													25
 #define BUTTON_WINDOW_ID														WM_USER
 
+#define STATUS_LIST_BOX_WINDOW_HEIGHT											100
+
 #define EDIT_WINDOW_DEFAULT_URL													"https://news.sky.com/uk"
 
 #define DEFAULT_STRING_MUST_CONTAIN_VALUE										".jpg"
