@@ -122,6 +122,43 @@ BOOL ProcessString( LPCTSTR lpszString, LPCTSTR lpszExtra )
 
 } // End of function ProcessString
 
+void ListBoxWindowSelectionChangedFunction( LPTSTR lpszItemText )
+{
+	// Show item text on status bar window
+	g_statusBarWindow.SetText( lpszItemText );
+
+} // End of function ListBoxWindowSelectionChangedFunction
+
+void FileListBoxWindowDoubleClickFunction( LPTSTR lpszItemText )
+{
+	// Open item
+	if( ( INT_PTR )ShellExecute( NULL, SHELL_EXECUTE_OPEN_COMMAND, lpszItemText, NULL, NULL, SW_SHOWDEFAULT ) <= SHELL_EXECUTE_MINIMUM_SUCCESS_RETURN_VALUE )
+	{
+		// Unable to open item
+
+		// Allocate string memory
+		LPTSTR lpszErrorMessage = new char[ STRING_LENGTH + sizeof( char ) ];
+
+		// Format error message
+		wsprintf( lpszErrorMessage, UNABLE_TO_OPEN_FILE_ERROR_MESSAGE_FORMAT_STRING, lpszItemText );
+
+		// Display error message
+		MessageBox( NULL, lpszErrorMessage, ERROR_MESSAGE_CAPTION, ( MB_OK | MB_ICONERROR ) );
+
+		// Free string memory
+		delete [] lpszErrorMessage;
+
+	} // End of unable to open item
+
+} // End of function FileListBoxWindowDoubleClickFunction
+
+void StatusListBoxWindowDoubleClickFunction( LPTSTR lpszItemText )
+{
+	// Display item text
+	MessageBox( NULL, lpszItemText, INFORMATION_MESSAGE_CAPTION, ( MB_OK | MB_ICONINFORMATION ) );
+
+} // End of function StatusListBoxWindowDoubleClickFunction
+
 void EditWindowUpdateFunction( int nTextLength )
 {
 	// See if edit window contains text
@@ -507,15 +544,45 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 
 						} // End of command message was not handled from edit window
 
-					} // End of command message is from tree view window
+					} // End of command message is from edit window
+					else if( ( HWND )lParam == g_fileListBoxWindow )
+					{
+						// Command message is from file list box window
+
+						// Handle command message from file list box window
+						if( !( g_fileListBoxWindow.HandleCommandMessage( wParam, lParam, &ListBoxWindowSelectionChangedFunction, &FileListBoxWindowDoubleClickFunction ) ) )
+						{
+							// Command message was not handled from file list box window
+
+							// Call default procedure
+							lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
+
+						} // End of command message was not handled from file list box window
+
+					} // End of command message is from file list box window
+					else if( ( HWND )lParam == g_statusListBoxWindow )
+					{
+						// Command message is from status list box window
+
+						// Handle command message from status list box window
+						if( !( g_statusListBoxWindow.HandleCommandMessage( wParam, lParam, &ListBoxWindowSelectionChangedFunction, &StatusListBoxWindowDoubleClickFunction ) ) )
+						{
+							// Command message was not handled from status list box window
+
+							// Call default procedure
+							lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
+
+						} // End of command message was not handled from status list box window
+
+					} // End of command message is from status list box window
 					else
 					{
-						// Command message is not from tree view window
+						// Command message is not from control window
 
 						// Call default procedure
 						lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
 
-					} // End of command message is not from tree view window
+					} // End of command message is not from control window
 
 					// Break out of switch
 					break;
