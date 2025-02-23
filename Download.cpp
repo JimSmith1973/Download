@@ -45,8 +45,24 @@ void DownloadListViewWindowSelectionChangedFunction( LPCTSTR lpszItemPath )
 
 void DownloadListViewWindowDoubleClickFunction( LPCTSTR lpszItemPath )
 {
-	// Display item path
-	MessageBox( NULL, lpszItemPath, INFORMATION_MESSAGE_CAPTION, ( MB_OK | MB_ICONINFORMATION ) );
+	// Open item
+	if( ( INT_PTR )ShellExecute( NULL, SHELL_EXECUTE_OPEN_COMMAND, lpszItemPath, NULL, NULL, SW_SHOWDEFAULT ) <= SHELL_EXECUTE_MINIMUM_SUCCESS_RETURN_VALUE )
+	{
+		// Unable to open item
+
+		// Allocate string memory
+		LPTSTR lpszErrorMessage = new char[ STRING_LENGTH + sizeof( char ) ];
+
+		// Format error message
+		wsprintf( lpszErrorMessage, UNABLE_TO_OPEN_FILE_ERROR_MESSAGE_FORMAT_STRING, lpszItemPath );
+
+		// Display error message
+		MessageBox( NULL, lpszErrorMessage, ERROR_MESSAGE_CAPTION, ( MB_OK | MB_ICONERROR ) );
+
+		// Free string memory
+		delete [] lpszErrorMessage;
+
+	} // End of unable to open item
 
 } // End of function DownloadListViewWindowDoubleClickFunction
 
