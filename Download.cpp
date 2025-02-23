@@ -6,10 +6,49 @@
 Internet g_internet;
 EditWindow g_editWindow;
 ButtonWindow g_buttonWindow;
-ListBoxWindow g_fileListBoxWindow;
+DownloadListViewWindow g_downloadListViewWindow;
 ListBoxWindow g_statusListBoxWindow;
 StatusBarWindow g_statusBarWindow;
 LPTSTR g_lpszStringMustContain;
+
+int CALLBACK DownloadListViewWindowCompareFunction( LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort )
+{
+	int nResult = 0;
+
+	// Allocate string memory
+	LPTSTR lpszItemText1 = new char[ STRING_LENGTH + sizeof( char ) ];
+	LPTSTR lpszItemText2 = new char[ STRING_LENGTH + sizeof( char ) ];
+
+	// Get first item text
+	g_downloadListViewWindow.GetItemText( lParam1, lParamSort, lpszItemText1 );
+
+	// Get second item text
+	g_downloadListViewWindow.GetItemText( lParam2, lParamSort, lpszItemText2 );
+
+	// Compare item texts
+	nResult = lstrcmpi( lpszItemText1, lpszItemText2 );
+
+	// Free string memory
+	delete [] lpszItemText1;
+	delete [] lpszItemText2;
+
+	return nResult;
+
+} // End of function DownloadListViewWindowCompareFunction
+
+void DownloadListViewWindowSelectionChangedFunction( LPCTSTR lpszItemPath )
+{
+	// Show item path on status bar window
+	g_statusBarWindow.SetText( lpszItemPath );
+
+} // End of function DownloadListViewWindowSelectionChangedFunction
+
+void DownloadListViewWindowDoubleClickFunction( LPCTSTR lpszItemPath )
+{
+	// Display item path
+	MessageBox( NULL, lpszItemPath, INFORMATION_MESSAGE_CAPTION, ( MB_OK | MB_ICONINFORMATION ) );
+
+} // End of function DownloadListViewWindowDoubleClickFunction
 
 BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 {
@@ -28,9 +67,20 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 	if( g_internet.DownloadFile( lpszUrl, lpszLocalFilePath ) )
 	{
 		// Successfully downloaded url to local file
+		int nItem;
 
-		// Add local file path to file list box window
-		g_fileListBoxWindow.AddTextEx( lpszLocalFilePath );
+		// Add url to download list view window
+		nItem = g_downloadListViewWindow.AddItemEx( lpszUrl );
+
+		// Ensure that url was added to download list view window
+		if( nItem >= 0 )
+		{
+			// Successfully added url to download list view window
+
+			// Show local file path on download list view window
+			g_downloadListViewWindow.SetItemText( nItem, DOWNLOAD_LIST_VIEW_WINDOW_CLASS_LOCAL_FILE_COLUMN_ID, lpszLocalFilePath );
+
+		} // End of successfully added url to download list view window
 
 		// Format status message
 		wsprintf( lpszStatusMessage, INTERNET_CLASS_SUCCESSFULLY_DOWNLOADED_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, lpszLocalFilePath );
@@ -280,13 +330,13 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 					// Set button window font
 					g_buttonWindow.SetFont( font );
 
-					// Create file list box window
-					if( g_fileListBoxWindow.Create( hWndMain, hInstance ) )
+					// Create download list view window
+					if( g_downloadListViewWindow.Create( hWndMain, hInstance ) )
 					{
-						// Successfully created file list box window
+						// Successfully created download list view window
 
-						// Set file list box window font
-						g_fileListBoxWindow.SetFont( font );
+						// Set download list view window font
+						g_downloadListViewWindow.SetFont( font );
 
 						// Create status list box window
 						if( g_statusListBoxWindow.Create( hWndMain, hInstance ) )
@@ -311,7 +361,7 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 
 						} // End of successfully created status list box window
 
-					} // End of successfully created file list box window
+					} // End of successfully created download list view window
 
 				} // End of successfully created button window
 
@@ -360,7 +410,7 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 			// Move control windows
 			g_editWindow.Move( 0, 0, nEditWindowWidth, BUTTON_WINDOW_HEIGHT, TRUE );
 			g_buttonWindow.Move( nButtonWindowLeft, 0, BUTTON_WINDOW_WIDTH, BUTTON_WINDOW_HEIGHT, TRUE );
-			g_fileListBoxWindow.Move( 0, nFileListBoxWindowTop, nClientWidth, nFileListBoxWindowHeight, TRUE );
+			g_downloadListViewWindow.Move( 0, nFileListBoxWindowTop, nClientWidth, nFileListBoxWindowHeight, TRUE );
 			g_statusListBoxWindow.Move( 0, nStatusListBoxWindowTop, nClientWidth, STATUS_LIST_BOX_WINDOW_HEIGHT, TRUE );
 
 			// Break out of switch
@@ -438,6 +488,9 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 
 									// Process strings
 									nStringCount = localFile.ProcessStrings( g_lpszStringMustContain, lpszUrl, &ProcessString );
+
+									// Auto-size download list view window columns
+									g_downloadListViewWindow.AutoSizeAllColumns();
 
 									// Format status message
 									wsprintf( lpszStatusMessage, HTML_FILE_CLASS_PROCESS_STRINGS_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, nStringCount );
@@ -545,21 +598,6 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 						} // End of command message was not handled from edit window
 
 					} // End of command message is from edit window
-					else if( ( HWND )lParam == g_fileListBoxWindow )
-					{
-						// Command message is from file list box window
-
-						// Handle command message from file list box window
-						if( !( g_fileListBoxWindow.HandleCommandMessage( wParam, lParam, &ListBoxWindowSelectionChangedFunction, &FileListBoxWindowDoubleClickFunction ) ) )
-						{
-							// Command message was not handled from file list box window
-
-							// Call default procedure
-							lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
-
-						} // End of command message was not handled from file list box window
-
-					} // End of command message is from file list box window
 					else if( ( HWND )lParam == g_statusListBoxWindow )
 					{
 						// Command message is from status list box window
@@ -634,9 +672,35 @@ LRESULT CALLBACK MainWindowProcedure( HWND hWndMain, UINT uMessage, WPARAM wPara
 		case WM_NOTIFY:
 		{
 			// A notify message
+			LPNMHDR lpNmHdr;
 
-			// Call default handler
-			lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
+			// Get notify message information
+			lpNmHdr = ( LPNMHDR )lParam;
+
+			// See if notify message is from download list view window
+			if( lpNmHdr->hwndFrom == g_downloadListViewWindow )
+			{
+				// Notify message is from download list view window
+
+				// Handle notify message from download list view window
+				if( !( g_downloadListViewWindow.HandleNotifyMessage( wParam, lParam, &DownloadListViewWindowSelectionChangedFunction, &DownloadListViewWindowDoubleClickFunction, &DownloadListViewWindowCompareFunction ) ) )
+				{
+					// Notify message was not handled from download list view window
+
+					// Call default handler
+					lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
+
+				} // End of notify message was not handled from download list view window
+
+			} // End of notify message is from download list view window
+			else
+			{
+				// Notify message is not from control window
+
+				// Call default handler
+				lr = DefWindowProc( hWndMain, uMessage, wParam, lParam );
+
+			} // End of notify message is not from control window
 
 			// Break out of switch
 			break;

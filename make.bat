@@ -9,6 +9,7 @@ g++ -mwindows -m64 -static -Wall -Wextra Download.cpp ^
  ..\Classes\ArgumentListClass.cpp ^
  ..\Classes\ButtonWindowClass.cpp ^
  ..\Classes\ClipboardClass.cpp ^
+ ..\Classes\DownloadListViewWindowClass.cpp ^
  ..\Classes\DroppedFilesClass.cpp ^
  ..\Classes\EditWindowClass.cpp ^
  ..\Classes\FileClass.cpp ^
@@ -16,6 +17,7 @@ g++ -mwindows -m64 -static -Wall -Wextra Download.cpp ^
  ..\Classes\HtmlFileClass.cpp ^
  ..\Classes\InternetClass.cpp ^
  ..\Classes\ListBoxWindowClass.cpp ^
+ ..\Classes\ListViewWindowClass.cpp ^
  ..\Classes\MenuClass.cpp ^
  ..\Classes\MessageClass.cpp ^
  ..\Classes\StatusBarWindowClass.cpp ^

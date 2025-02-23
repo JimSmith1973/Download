@@ -13,6 +13,7 @@
 #include "..\Classes\ArgumentListClass.h"
 #include "..\Classes\ButtonWindowClass.h"
 #include "..\Classes\ClipboardClass.h"
+#include "..\Classes\DownloadListViewWindowClass.h"
 #include "..\Classes\DroppedFilesClass.h"
 #include "..\Classes\EditWindowClass.h"
 #include "..\Classes\FontClass.h"
