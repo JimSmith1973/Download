@@ -70,55 +70,62 @@ BOOL DownloadFile( LPCTSTR lpszUrl, LPTSTR lpszLocalFilePath )
 {
 	BOOL bResult = FALSE;
 
-	// Allocate string memory
-	LPTSTR lpszStatusMessage = new char[ STRING_LENGTH + sizeof( char ) ];
-
-	// Format status message
-	wsprintf( lpszStatusMessage, INTERNET_CLASS_DOWNLOADING_STATUS_MESSAGE_FORMAT_STRING, lpszUrl );
-
-	// Add status message to status list box window
-	g_statusListBoxWindow.AddTextEx( lpszStatusMessage );
-
-	// Download url to local file
-	if( g_internet.DownloadFile( lpszUrl, lpszLocalFilePath ) )
+	// See if url already exists on download list view window
+	if( g_downloadListViewWindow.Find( lpszUrl ) < 0 )
 	{
-		// Successfully downloaded url to local file
-		int nItem;
+		// Url does not already exist on download list view window
 
-		// Add url to download list view window
-		nItem = g_downloadListViewWindow.AddItemEx( lpszUrl );
+		// Allocate string memory
+		LPTSTR lpszStatusMessage = new char[ STRING_LENGTH + sizeof( char ) ];
 
-		// Ensure that url was added to download list view window
-		if( nItem >= 0 )
+		// Format status message
+		wsprintf( lpszStatusMessage, INTERNET_CLASS_DOWNLOADING_STATUS_MESSAGE_FORMAT_STRING, lpszUrl );
+
+		// Add status message to status list box window
+		g_statusListBoxWindow.AddTextEx( lpszStatusMessage );
+
+		// Download url to local file
+		if( g_internet.DownloadFile( lpszUrl, lpszLocalFilePath ) )
 		{
-			// Successfully added url to download list view window
+			// Successfully downloaded url to local file
+			int nItem;
 
-			// Show local file path on download list view window
-			g_downloadListViewWindow.SetItemText( nItem, DOWNLOAD_LIST_VIEW_WINDOW_CLASS_LOCAL_FILE_COLUMN_ID, lpszLocalFilePath );
+			// Add url to download list view window
+			nItem = g_downloadListViewWindow.AddItemEx( lpszUrl );
 
-		} // End of successfully added url to download list view window
+			// Ensure that url was added to download list view window
+			if( nItem >= 0 )
+			{
+				// Successfully added url to download list view window
 
-		// Format status message
-		wsprintf( lpszStatusMessage, INTERNET_CLASS_SUCCESSFULLY_DOWNLOADED_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, lpszLocalFilePath );
+				// Show local file path on download list view window
+				g_downloadListViewWindow.SetItemText( nItem, DOWNLOAD_LIST_VIEW_WINDOW_CLASS_LOCAL_FILE_COLUMN_ID, lpszLocalFilePath );
 
-		// Update return value
-		bResult = TRUE;
+			} // End of successfully added url to download list view window
 
-	} // End of successfully downloaded url to local file
-	else
-	{
-		// Unable to download url to local file
+			// Format status message
+			wsprintf( lpszStatusMessage, INTERNET_CLASS_SUCCESSFULLY_DOWNLOADED_STATUS_MESSAGE_FORMAT_STRING, lpszUrl, lpszLocalFilePath );
 
-		// Format status message
-		wsprintf( lpszStatusMessage, INTERNET_CLASS_UNABLE_TO_DOWNLOAD_STATUS_MESSAGE_FORMAT_STRING, lpszUrl );
+			// Update return value
+			bResult = TRUE;
 
-	} // End of unable to download url to local file
+		} // End of successfully downloaded url to local file
+		else
+		{
+			// Unable to download url to local file
 
-	// Add status message to status list box window
-	g_statusListBoxWindow.AddTextEx( lpszStatusMessage );
+			// Format status message
+			wsprintf( lpszStatusMessage, INTERNET_CLASS_UNABLE_TO_DOWNLOAD_STATUS_MESSAGE_FORMAT_STRING, lpszUrl );
 
-	// Free string memory
-	delete [] lpszStatusMessage;
+		} // End of unable to download url to local file
+
+		// Add status message to status list box window
+		g_statusListBoxWindow.AddTextEx( lpszStatusMessage );
+
+		// Free string memory
+		delete [] lpszStatusMessage;
+	} // End of url does not already exist on download list view window
+
 
 	return bResult;
 
